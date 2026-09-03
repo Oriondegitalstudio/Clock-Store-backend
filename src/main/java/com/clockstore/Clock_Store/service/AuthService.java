@@ -1,5 +1,6 @@
 package com.clockstore.Clock_Store.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,7 +14,9 @@ import com.clockstore.Clock_Store.dto.response.CustomerResponse;
 import com.clockstore.Clock_Store.dto.response.LoginResponse;
 import com.clockstore.Clock_Store.dto.response.RefreshTokenResponse;
 import com.clockstore.Clock_Store.dto.response.RegisterResponse;
+import com.clockstore.Clock_Store.dto.response.SessionResponse;
 import com.clockstore.Clock_Store.entity.Customer;
+import com.clockstore.Clock_Store.entity.CustomerSession;
 import com.clockstore.Clock_Store.entity.RefreshToken;
 import com.clockstore.Clock_Store.entity.enums.CustomerStatus;
 import com.clockstore.Clock_Store.exception.ConflictException;
@@ -21,7 +24,10 @@ import com.clockstore.Clock_Store.exception.ForbiddenException;
 import com.clockstore.Clock_Store.exception.NotFoundException;
 import com.clockstore.Clock_Store.exception.UnauthorizedException;
 import com.clockstore.Clock_Store.repository.CustomerRepository;
+import com.clockstore.Clock_Store.repository.CustomerSessionRepository;
 import com.clockstore.Clock_Store.repository.RefreshTokenRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class AuthService {
@@ -30,17 +36,20 @@ public class AuthService {
         private final PasswordEncoder passwordEncoder;
         private final JwtService jwtService;
         private final RefreshTokenRepository refreshTokenRepository;
+        private final CustomerSessionRepository customerSessionRepository;
 
         public AuthService(
                         CustomerRepository customerRepository,
                         PasswordEncoder passwordEncoder,
                         JwtService jwtService,
-                        RefreshTokenRepository refreshTokenRepository) {
+                        RefreshTokenRepository refreshTokenRepository,
+                        CustomerSessionRepository customerSessionRepository) {
 
                 this.customerRepository = customerRepository;
                 this.passwordEncoder = passwordEncoder;
                 this.jwtService = jwtService;
                 this.refreshTokenRepository = refreshTokenRepository;
+                this.customerSessionRepository = customerSessionRepository;
         }
 
         public RegisterResponse register(RegisterRequest request) {
@@ -82,7 +91,9 @@ public class AuthService {
                                                 savedCustomer.getUpdatedAt()));
         }
 
-        public LoginResponse login(LoginRequest request) {
+        public LoginResponse login(
+                        LoginRequest request,
+                        HttpServletRequest httpRequest) {
 
                 String email = request.email()
                                 .trim()
@@ -124,15 +135,28 @@ public class AuthService {
                                 customer.getUpdatedAt());
 
                 String accessToken = jwtService.generateAccessToken(customer);
-                String refreshToken = jwtService.generateRefreshToken(customer);
+
+                String refreshToken = jwtService.generateRefreshToken(customer, request.rememberMe());
 
                 RefreshToken refreshTokenEntity = RefreshToken.builder()
                                 .token(refreshToken)
                                 .customer(customer)
                                 .expiresAt(jwtService.extractExpiration(refreshToken).toInstant())
+                                .rememberMe(request.rememberMe())
                                 .build();
 
                 refreshTokenRepository.save(refreshTokenEntity);
+
+                // Create a new session for the customer
+                CustomerSession session = CustomerSession.builder()
+                                .customer(customer)
+                                .refreshToken(refreshTokenEntity)
+                                .ipAddress(httpRequest.getRemoteAddr())
+                                .userAgent(httpRequest.getHeader("User-Agent"))
+                                .expiresAt(refreshTokenEntity.getExpiresAt())
+                                .build();
+
+                customerSessionRepository.save(session);
 
                 return new LoginResponse(
                                 customerResponse,
@@ -156,6 +180,7 @@ public class AuthService {
                                 .orElseThrow(() -> new UnauthorizedException(
                                                 "Invalid or expired refresh token"));
 
+                // Revoked token
                 if (storedToken.isRevoked()) {
                         throw new UnauthorizedException(
                                         "Refresh token has been revoked");
@@ -175,9 +200,40 @@ public class AuthService {
                                         "Customer account is not active");
                 }
 
+                boolean rememberMe = storedToken.isRememberMe();
+
                 String newAccessToken = jwtService.generateAccessToken(customer);
 
-                String newRefreshToken = jwtService.generateRefreshToken(customer);
+                String newRefreshToken = jwtService.generateRefreshToken(
+                                customer,
+                                rememberMe);
+
+                // Revoke old refresh token
+                storedToken.setRevoked(true);
+                refreshTokenRepository.save(storedToken);
+
+                // Create new refresh token
+                RefreshToken newRefreshTokenEntity = RefreshToken.builder()
+                                .token(newRefreshToken)
+                                .customer(customer)
+                                .expiresAt(jwtService.extractExpiration(newRefreshToken).toInstant())
+                                .rememberMe(rememberMe)
+                                .build();
+
+                refreshTokenRepository.save(newRefreshTokenEntity);
+
+                // Update customer session
+                CustomerSession session = customerSessionRepository
+                                .findByRefreshTokenId(storedToken.getId())
+                                .orElseThrow(() -> new NotFoundException(
+                                                "Customer session not found"));
+
+                session.setRefreshToken(newRefreshTokenEntity);
+                session.setLastActivityAt(java.time.Instant.now());
+                session.setExpiresAt(
+                                newRefreshTokenEntity.getExpiresAt());
+
+                customerSessionRepository.save(session);
 
                 return new RefreshTokenResponse(
                                 newAccessToken,
@@ -213,5 +269,23 @@ public class AuthService {
                 storedToken.setRevoked(true);
 
                 refreshTokenRepository.save(storedToken);
+        }
+
+        public List<SessionResponse> getActiveSessions() {
+
+                UUID customerId = UUID.fromString(
+                                SecurityContextHolder.getContext()
+                                                .getAuthentication()
+                                                .getName());
+
+                return customerSessionRepository
+                                .findByCustomerIdAndRevokedFalse(customerId)
+                                .stream()
+                                .map(session -> new SessionResponse(
+                                                session.getId(),
+                                                session.getCreatedAt(),
+                                                session.getExpiresAt(),
+                                                session.isRevoked()))
+                                .toList();
         }
 }

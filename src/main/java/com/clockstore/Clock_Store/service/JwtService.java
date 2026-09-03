@@ -21,25 +21,36 @@ public class JwtService {
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
+    private final long rememberMeExpiration;
 
     public JwtService(
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.access-token-expiration}") long accessTokenExpiration,
-            @Value("${jwt.refresh-token-expiration}") long refreshTokenExpiration) {
+            @Value("${jwt.refresh-token-expiration}") long refreshTokenExpiration,
+            @Value("${jwt.remember-me-expiration}") long rememberMeExpiration) {
 
         this.secretKey = Keys.hmacShaKeyFor(
                 secret.getBytes(StandardCharsets.UTF_8));
 
         this.accessTokenExpiration = accessTokenExpiration;
         this.refreshTokenExpiration = refreshTokenExpiration;
+        this.rememberMeExpiration = rememberMeExpiration;
     }
 
     public String generateAccessToken(Customer customer) {
         return generateToken(customer, accessTokenExpiration, "access");
     }
-
+    
     public String generateRefreshToken(Customer customer) {
-        return generateToken(customer, refreshTokenExpiration, "refresh");
+        return generateToken(
+                customer,
+                refreshTokenExpiration,
+                "refresh");
+    }
+
+    public String generateRefreshToken(Customer customer, boolean rememberMe) {
+        long expiration = rememberMe ? rememberMeExpiration : refreshTokenExpiration;
+        return generateToken(customer, expiration, "refresh");
     }
 
     private String generateToken(
