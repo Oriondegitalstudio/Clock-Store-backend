@@ -1,5 +1,6 @@
 package com.clockstore.Clock_Store.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ import com.clockstore.Clock_Store.dto.response.RegisterResponse;
 import com.clockstore.Clock_Store.dto.response.SessionResponse;
 import com.clockstore.Clock_Store.entity.Customer;
 import com.clockstore.Clock_Store.entity.CustomerSession;
+import com.clockstore.Clock_Store.entity.EmailVerificationToken;
 import com.clockstore.Clock_Store.entity.RefreshToken;
 import com.clockstore.Clock_Store.entity.enums.CustomerStatus;
 import com.clockstore.Clock_Store.exception.ConflictException;
@@ -25,8 +27,9 @@ import com.clockstore.Clock_Store.exception.NotFoundException;
 import com.clockstore.Clock_Store.exception.UnauthorizedException;
 import com.clockstore.Clock_Store.repository.CustomerRepository;
 import com.clockstore.Clock_Store.repository.CustomerSessionRepository;
+import com.clockstore.Clock_Store.repository.EmailVerificationTokenRepository;
 import com.clockstore.Clock_Store.repository.RefreshTokenRepository;
-
+import org.springframework.beans.factory.annotation.Value;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Service
@@ -37,19 +40,23 @@ public class AuthService {
         private final JwtService jwtService;
         private final RefreshTokenRepository refreshTokenRepository;
         private final CustomerSessionRepository customerSessionRepository;
-
+        private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+        @Value("${jwt.email-verification-expiration}")
+        private long emailVerificationExpiration;
         public AuthService(
                         CustomerRepository customerRepository,
                         PasswordEncoder passwordEncoder,
                         JwtService jwtService,
                         RefreshTokenRepository refreshTokenRepository,
-                        CustomerSessionRepository customerSessionRepository) {
+                        CustomerSessionRepository customerSessionRepository,
+                        EmailVerificationTokenRepository emailVerificationTokenRepository) {
 
                 this.customerRepository = customerRepository;
                 this.passwordEncoder = passwordEncoder;
                 this.jwtService = jwtService;
                 this.refreshTokenRepository = refreshTokenRepository;
                 this.customerSessionRepository = customerSessionRepository;
+                this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         }
 
         public RegisterResponse register(RegisterRequest request) {
@@ -157,6 +164,16 @@ public class AuthService {
                                 .build();
 
                 customerSessionRepository.save(session);
+
+                String verificationToken = UUID.randomUUID().toString();
+
+                EmailVerificationToken verificationTokenEntity = EmailVerificationToken.builder()
+                                .token(verificationToken)
+                                .customer(customer)
+                                .expiresAt(Instant.now().plusMillis(emailVerificationExpiration))
+                                .build();
+
+                emailVerificationTokenRepository.save(verificationTokenEntity);
 
                 return new LoginResponse(
                                 customerResponse,
