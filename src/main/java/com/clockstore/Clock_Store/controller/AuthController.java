@@ -3,6 +3,7 @@ package com.clockstore.Clock_Store.controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +22,11 @@ import com.clockstore.Clock_Store.service.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+
+import com.clockstore.Clock_Store.dto.request.EmailVerificationRequest;
+import com.clockstore.Clock_Store.dto.response.EmailVerificationResponse;
+
+import com.clockstore.Clock_Store.dto.request.ResendVerificationRequest;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -65,5 +71,23 @@ public class AuthController {
     @GetMapping("/sessions")
     public List<SessionResponse> getActiveSessions() {
         return authService.getActiveSessions();
+    }
+
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<EmailVerificationResponse> verifyEmail(
+            @Valid @RequestBody EmailVerificationRequest request) {
+
+        return ResponseEntity.ok(
+                authService.verifyEmail(request));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Void> resendVerificationEmail(
+            @Valid @RequestBody ResendVerificationRequest request) {
+
+        authService.resendVerificationEmail(request);
+
+        return ResponseEntity.noContent().build();
     }
 }

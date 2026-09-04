@@ -4,14 +4,18 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.clockstore.Clock_Store.dto.request.EmailVerificationRequest;
 import com.clockstore.Clock_Store.dto.request.LoginRequest;
 import com.clockstore.Clock_Store.dto.request.RefreshTokenRequest;
 import com.clockstore.Clock_Store.dto.request.RegisterRequest;
+import com.clockstore.Clock_Store.dto.request.ResendVerificationRequest;
 import com.clockstore.Clock_Store.dto.response.CustomerResponse;
+import com.clockstore.Clock_Store.dto.response.EmailVerificationResponse;
 import com.clockstore.Clock_Store.dto.response.LoginResponse;
 import com.clockstore.Clock_Store.dto.response.RefreshTokenResponse;
 import com.clockstore.Clock_Store.dto.response.RegisterResponse;
@@ -29,7 +33,7 @@ import com.clockstore.Clock_Store.repository.CustomerRepository;
 import com.clockstore.Clock_Store.repository.CustomerSessionRepository;
 import com.clockstore.Clock_Store.repository.EmailVerificationTokenRepository;
 import com.clockstore.Clock_Store.repository.RefreshTokenRepository;
-import org.springframework.beans.factory.annotation.Value;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 @Service
@@ -43,6 +47,7 @@ public class AuthService {
         private final EmailVerificationTokenRepository emailVerificationTokenRepository;
         @Value("${jwt.email-verification-expiration}")
         private long emailVerificationExpiration;
+
         public AuthService(
                         CustomerRepository customerRepository,
                         PasswordEncoder passwordEncoder,
@@ -304,5 +309,58 @@ public class AuthService {
                                                 session.getExpiresAt(),
                                                 session.isRevoked()))
                                 .toList();
+        }
+
+        public EmailVerificationResponse verifyEmail(
+                        EmailVerificationRequest request) {
+
+                EmailVerificationToken verificationToken = emailVerificationTokenRepository
+                                .findByToken(request.token())
+                                .orElseThrow(() -> new UnauthorizedException(
+                                                "Invalid verification token"));
+
+                if (verificationToken.isUsed()) {
+                        throw new UnauthorizedException(
+                                        "Verification token has already been used");
+                }
+
+                if (verificationToken.getExpiresAt().isBefore(Instant.now())) {
+                        throw new UnauthorizedException(
+                                        "Verification token has expired");
+                }
+
+                Customer customer = verificationToken.getCustomer();
+
+                if (customer.isEmailVerified()) {
+                        throw new ConflictException(
+                                        "Email is already verified");
+                }
+
+                customer.setEmailVerified(true);
+                customerRepository.save(customer);
+
+                verificationToken.setUsed(true);
+                emailVerificationTokenRepository.save(verificationToken);
+
+                return new EmailVerificationResponse(
+                                "Email verified successfully");
+        }
+
+        public void resendVerificationEmail(ResendVerificationRequest request) {
+                String email = request.email().trim().toLowerCase();
+                Customer customer = customerRepository.findByEmail(email)
+                                .orElseThrow(() -> new NotFoundException("Customer not found"));
+                if (customer.isEmailVerified()) {
+                        throw new ConflictException("Email is already verified");
+                }
+                emailVerificationTokenRepository.findByCustomerId(customer.getId())
+                                .ifPresent(existingToken -> emailVerificationTokenRepository.delete(existingToken));
+                String verificationToken = UUID.randomUUID().toString();
+                EmailVerificationToken newToken = EmailVerificationToken.builder()
+                                .token(verificationToken)
+                                .customer(customer)
+                                .expiresAt(Instant.now().plusMillis(emailVerificationExpiration))
+                                .build();
+                emailVerificationTokenRepository.save(newToken);
         }
 }
