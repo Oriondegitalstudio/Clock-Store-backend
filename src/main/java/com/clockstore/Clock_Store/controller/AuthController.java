@@ -11,9 +11,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clockstore.Clock_Store.dto.request.EmailVerificationRequest;
+import com.clockstore.Clock_Store.dto.request.ForgotPasswordRequest;
 import com.clockstore.Clock_Store.dto.request.LoginRequest;
 import com.clockstore.Clock_Store.dto.request.RefreshTokenRequest;
 import com.clockstore.Clock_Store.dto.request.RegisterRequest;
+import com.clockstore.Clock_Store.dto.request.ResendVerificationRequest;
+import com.clockstore.Clock_Store.dto.response.EmailVerificationResponse;
+import com.clockstore.Clock_Store.dto.response.ForgotPasswordResponse;
 import com.clockstore.Clock_Store.dto.response.LoginResponse;
 import com.clockstore.Clock_Store.dto.response.RefreshTokenResponse;
 import com.clockstore.Clock_Store.dto.response.RegisterResponse;
@@ -22,11 +27,6 @@ import com.clockstore.Clock_Store.service.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-
-import com.clockstore.Clock_Store.dto.request.EmailVerificationRequest;
-import com.clockstore.Clock_Store.dto.response.EmailVerificationResponse;
-
-import com.clockstore.Clock_Store.dto.request.ResendVerificationRequest;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -73,7 +73,6 @@ public class AuthController {
         return authService.getActiveSessions();
     }
 
-
     @PostMapping("/verify-email")
     public ResponseEntity<EmailVerificationResponse> verifyEmail(
             @Valid @RequestBody EmailVerificationRequest request) {
@@ -89,5 +88,13 @@ public class AuthController {
         authService.resendVerificationEmail(request);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ForgotPasswordResponse> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        return ResponseEntity.ok(
+                authService.forgotPassword(request));
     }
 }
