@@ -96,7 +96,17 @@ public class AuthService {
                                 .build();
 
                 Customer savedCustomer = customerRepository.save(customer);
+                String verificationToken = UUID.randomUUID().toString();
 
+                EmailVerificationToken verificationTokenEntity = EmailVerificationToken.builder()
+                                .token(verificationToken)
+                                .customer(savedCustomer)
+                                .expiresAt(
+                                                Instant.now()
+                                                                .plusMillis(emailVerificationExpiration))
+                                .build();
+
+                emailVerificationTokenRepository.save(verificationTokenEntity);
                 return new RegisterResponse(
                                 new CustomerResponse(
                                                 savedCustomer.getId(),
@@ -179,16 +189,6 @@ public class AuthService {
                                 .build();
 
                 customerSessionRepository.save(session);
-
-                String verificationToken = UUID.randomUUID().toString();
-
-                EmailVerificationToken verificationTokenEntity = EmailVerificationToken.builder()
-                                .token(verificationToken)
-                                .customer(customer)
-                                .expiresAt(Instant.now().plusMillis(emailVerificationExpiration))
-                                .build();
-
-                emailVerificationTokenRepository.save(verificationTokenEntity);
 
                 return new LoginResponse(
                                 customerResponse,
@@ -375,42 +375,39 @@ public class AuthService {
         }
 
         public ForgotPasswordResponse forgotPassword(
-        ForgotPasswordRequest request) {
+                        ForgotPasswordRequest request) {
 
-        String email = request.email()
-                .trim()
-                .toLowerCase();
+                String email = request.email()
+                                .trim()
+                                .toLowerCase();
 
-        Optional<Customer> customerOptional =
-                customerRepository.findByEmail(email);
+                Optional<Customer> customerOptional = customerRepository.findByEmail(email);
 
-        if (customerOptional.isEmpty()) {
+                if (customerOptional.isEmpty()) {
+                        return new ForgotPasswordResponse(
+                                        "If the email exists, a password reset link has been sent");
+                }
+
+                Customer customer = customerOptional.get();
+
+                passwordResetTokenRepository
+                                .findByCustomerId(customer.getId())
+                                .ifPresent(existingToken -> passwordResetTokenRepository.delete(existingToken));
+
+                String resetToken = UUID.randomUUID().toString();
+
+                PasswordResetToken resetTokenEntity = PasswordResetToken.builder()
+                                .token(resetToken)
+                                .customer(customer)
+                                .expiresAt(
+                                                Instant.now()
+                                                                .plusMillis(
+                                                                                passwordResetExpiration))
+                                .build();
+
+                passwordResetTokenRepository.save(resetTokenEntity);
+
                 return new ForgotPasswordResponse(
-                        "If the email exists, a password reset link has been sent");
-        }
-
-        Customer customer = customerOptional.get();
-
-        passwordResetTokenRepository
-                .findByCustomerId(customer.getId())
-                .ifPresent(existingToken ->
-                        passwordResetTokenRepository.delete(existingToken));
-
-        String resetToken = UUID.randomUUID().toString();
-
-        PasswordResetToken resetTokenEntity =
-                PasswordResetToken.builder()
-                        .token(resetToken)
-                        .customer(customer)
-                        .expiresAt(
-                                Instant.now()
-                                        .plusMillis(
-                                                passwordResetExpiration))
-                        .build();
-
-        passwordResetTokenRepository.save(resetTokenEntity);
-
-        return new ForgotPasswordResponse(
-                "If the email exists, a password reset link has been sent");
+                                "If the email exists, a password reset link has been sent");
         }
 }
