@@ -73,4 +73,7 @@ public class Brand {
     public void setWebsite(String website) {
         this.website = website;
     }
+    public boolean isStatus() {
+        return status;
+    }
 }

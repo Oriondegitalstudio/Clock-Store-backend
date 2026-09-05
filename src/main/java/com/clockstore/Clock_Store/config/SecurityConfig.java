@@ -56,6 +56,17 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, "/api/brands/**").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/discounts/**").permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/shipping/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/reports/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/settings/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/notifications/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/logs/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/health/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/docs/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/swagger-ui/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v3/api-docs/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/openapi/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(
                                                 jwtAuthenticationFilter,
