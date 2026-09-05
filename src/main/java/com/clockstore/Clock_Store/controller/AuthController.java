@@ -1,0 +1,100 @@
+package com.clockstore.Clock_Store.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.clockstore.Clock_Store.dto.Request.EmailVerificationRequest;
+import com.clockstore.Clock_Store.dto.Request.ForgotPasswordRequest;
+import com.clockstore.Clock_Store.dto.Request.LoginRequest;
+import com.clockstore.Clock_Store.dto.Request.RefreshTokenRequest;
+import com.clockstore.Clock_Store.dto.Request.RegisterRequest;
+import com.clockstore.Clock_Store.dto.Request.ResendVerificationRequest;
+import com.clockstore.Clock_Store.dto.Response.EmailVerificationResponse;
+import com.clockstore.Clock_Store.dto.Response.ForgotPasswordResponse;
+import com.clockstore.Clock_Store.dto.Response.LoginResponse;
+import com.clockstore.Clock_Store.dto.Response.RefreshTokenResponse;
+import com.clockstore.Clock_Store.dto.Response.RegisterResponse;
+import com.clockstore.Clock_Store.dto.Response.SessionResponse;
+import com.clockstore.Clock_Store.service.AuthService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RegisterResponse register(
+            @Valid @RequestBody RegisterRequest request) {
+        return authService.register(request);
+    }
+
+    @PostMapping("/login")
+    public LoginResponse login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest) {
+
+        return authService.login(request, httpRequest);
+    }
+
+    @PostMapping("/refresh")
+    public RefreshTokenResponse refreshToken(
+            @Valid @RequestBody RefreshTokenRequest request) {
+
+        return authService.refreshToken(request);
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(
+            @Valid @RequestBody RefreshTokenRequest request) {
+
+        authService.logout(request);
+    }
+
+    @GetMapping("/sessions")
+    public List<SessionResponse> getActiveSessions() {
+        return authService.getActiveSessions();
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<EmailVerificationResponse> verifyEmail(
+            @Valid @RequestBody EmailVerificationRequest request) {
+
+        return ResponseEntity.ok(
+                authService.verifyEmail(request));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Void> resendVerificationEmail(
+            @Valid @RequestBody ResendVerificationRequest request) {
+
+        authService.resendVerificationEmail(request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ForgotPasswordResponse> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        return ResponseEntity.ok(
+                authService.forgotPassword(request));
+    }
+}

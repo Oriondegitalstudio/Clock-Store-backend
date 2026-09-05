@@ -1,6 +1,5 @@
 package com.clockstore.Clock_Store.dto.Response;
 
-public record ErrorResponse(
-        int status,
+public record ForgotPasswordResponse(
         String message) {
 }
