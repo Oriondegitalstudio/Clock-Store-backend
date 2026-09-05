@@ -211,4 +211,7 @@ public class Products {
         this.weight = weight;
     }
 
+    public boolean isFeatured() {
+        return featured;
+    }
 }
