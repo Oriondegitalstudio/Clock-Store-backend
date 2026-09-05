@@ -14,8 +14,8 @@ target/
 .sts4-cache
 
 ### .env ###
-.env.*
-!.env.example
+.env
+.env*
 ### IntelliJ IDEA ###
 .idea
 *.iws
@@ -34,3 +34,4 @@ build/
 
 ### VS Code ###
 .vscode/
+.history/
