@@ -1,6 +1,6 @@
 package com.clockstore.Clock_Store.config;
 
-import com.clockstore.Clock_Store.dto.response.ErrorResponse;
+import com.clockstore.Clock_Store.dto.Response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;

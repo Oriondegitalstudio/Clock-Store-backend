@@ -8,7 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.clockstore.Clock_Store.dto.response.ErrorResponse;
+import com.clockstore.Clock_Store.dto.Response.ErrorResponse;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.validation.ConstraintViolationException;

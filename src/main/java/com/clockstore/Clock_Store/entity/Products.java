@@ -23,7 +23,7 @@ import jakarta.persistence.Table;
 @Table(name = "products")
 public class Products {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(nullable = false)
@@ -211,4 +211,7 @@ public class Products {
         this.weight = weight;
     }
 
+    public boolean isFeatured() {
+        return featured;
+    }
 }
