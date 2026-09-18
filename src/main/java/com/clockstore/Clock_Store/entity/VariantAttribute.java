@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 @Table(name = "variant_attributes")
 public class VariantAttribute {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

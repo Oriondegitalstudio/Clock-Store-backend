@@ -15,7 +15,7 @@ import jakarta.persistence.Table;
 public class ProductOptionValue {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

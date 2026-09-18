@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 @Table(name = "product_images")
 public class ProductImage {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -18,8 +18,7 @@ public class ProductImage {
     private ProductVariant variant;
 
     @Column(nullable = false)
-    private String url;
-
+    private String url;//file upload
     private String altText;
 
     private Integer sortOrder;

@@ -15,7 +15,7 @@ import jakarta.persistence.Table;
 @Table(name = "categories")
 public class Category {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(name = "category_name", nullable = false)
@@ -69,6 +69,10 @@ public class Category {
 
     public Integer getSortOrder() {
         return sortOrder;
+    }
+
+    public boolean isStatus() {
+        return status;
     }
 
     public void setCategoryName(String categoryName) {

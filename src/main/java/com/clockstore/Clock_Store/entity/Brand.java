@@ -11,7 +11,7 @@ import jakarta.persistence.Table;
 @Table(name = "brands")
 public class Brand {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -72,5 +72,8 @@ public class Brand {
 
     public void setWebsite(String website) {
         this.website = website;
+    }
+    public boolean isStatus() {
+        return status;
     }
 }
