@@ -3,8 +3,12 @@ package com.clockstore.Clock_Store.entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.clockstore.Clock_Store.entity.enums.Currency;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,13 +28,14 @@ public class ProductPricing {
     @JoinColumn(name = "variant_id", nullable = false)
     private ProductVariant variant;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 3)
-    private String currency;
+    private Currency currency;
 
-    @Column(nullable = false, precision = 12, scale = 3)
+    @Column(nullable = false, precision = 15, scale = 3)
     private BigDecimal price;
 
-    @Column(precision = 12, scale = 3)
+    @Column(precision = 15, scale = 3)
     private BigDecimal salePrice;
 
     private LocalDate startDate;
@@ -41,7 +46,7 @@ public class ProductPricing {
     }
 
     // Getters & Setters
-    public String getCurrency() {
+    public Currency getCurrency() {
         return currency;
     }
 
@@ -69,7 +74,7 @@ public class ProductPricing {
         return variant;
     }
 
-    public void setCurrency(String currency) {
+    public void setCurrency(Currency currency) {
         this.currency = currency;
     }
 
